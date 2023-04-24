@@ -1,0 +1,40 @@
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME680.h>
+
+Adafruit_BME680 bme; // create BME680 object
+
+void setup() {
+  Serial.begin(9600);
+  while (!Serial);
+
+  if (!bme.begin()) {
+    Serial.println("Could not find BME680 sensor!");
+    while (1);
+  }
+}
+
+void loop() {
+  float temperature = bme.readTemperature();
+  float humidity = bme.readHumidity();
+  float pressure = bme.readPressure() / 100.0F;
+  float gas = bme.readGas();
+
+  Serial.print("Temperature = ");
+  Serial.print(temperature);
+  Serial.println(" *C");
+
+  Serial.print("Humidity = ");
+  Serial.print(humidity);
+  Serial.println(" %");
+
+  Serial.print("Pressure = ");
+  Serial.print(pressure);
+  Serial.println(" hPa");
+
+  Serial.print("Gas = ");
+  Serial.print(gas);
+  Serial.println(" KOhms");
+
+  delay(1000);
+}
