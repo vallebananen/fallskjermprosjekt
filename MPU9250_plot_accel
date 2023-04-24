@@ -1,0 +1,47 @@
+#include <Wire.h>
+
+const int MPU_addr = 0x68;  // I2C address of MPU9250
+
+int16_t accelerometer_x, accelerometer_y, accelerometer_z;
+
+unsigned long previousTime = 0;
+const long interval = 1000;
+
+void setup() {
+  Wire.begin();  // Initialize I2C communication
+  Wire.beginTransmission(MPU_addr);  // Begin communication with MPU6050
+  Wire.write(0x6B);  // PWR_MGMT_1 register
+  Wire.write(0);  // Set to zero to wake up MPU9250
+  Wire.endTransmission(true);  // End communication
+  Serial.begin(9600);  // Initialize serial communication
+  //Serial.println("X_verdi, Y_verdi, Z_verdi");
+}
+
+void loop() {
+  unsigned long currentTime = millis();
+  if (currentTime - previousTime >= interval) {
+    previousTime = currentTime;
+    
+    Wire.beginTransmission(MPU_addr);  // Begin communication with MPU9250
+    Wire.write(0x3B);  // Starting with register 0x3B (ACCEL_XOUT_H)
+    Wire.endTransmission(false);  // End transmission, but don't release the bus
+
+    // Request 14 bytes of data (accelerometer values)
+    Wire.requestFrom(MPU_addr, 14, true);
+
+    // Read accelerometer values
+    accelerometer_x = Wire.read() << 8 | Wire.read();
+    accelerometer_y = Wire.read() << 8 | Wire.read();
+    accelerometer_z = Wire.read() << 8 | Wire.read();
+
+    // Print values to serial monitor
+    Serial.println("Verdier fra akselerometer:"); 
+    Serial.print(" X verdi: ");
+    Serial.println(accelerometer_x);
+    Serial.print(" Y verdi: ");
+    Serial.println(accelerometer_y);
+    Serial.print(" Z verdi: ");
+    Serial.println(accelerometer_z);
+
+  }
+}
