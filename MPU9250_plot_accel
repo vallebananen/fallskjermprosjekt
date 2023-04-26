@@ -1,38 +1,65 @@
 #include <Wire.h>
 #include <MPU6050_tockn.h>
+#include <Servo.h>
 
-const int MPU_addr=0x68;  // I2C address of MPU6050
+const int MPU_addr = 0x68;  // I2C address of MPU6050
 const float accel_scale = 16384.0; // accelerometer scale factor
 const float g = 9.81; // acceleration due to gravity in m/s^2
 
 float Ax, Ay, Az; // variables to store real-time acceleration values
+float filtered_Ax = 0, filtered_Ay = 0, filtered_Az = -9.81; // variables to store filtered acceleration values
 
-void setup(){
+Servo myservo; // create servo object to control a servo
+
+void setup() {
   Wire.begin();
   Wire.beginTransmission(MPU_addr);
   Wire.write(0x6B);        // PWR_MGMT_1 register
   Wire.write(0);           // set to zero (wakes up the MPU6050)
   Wire.endTransmission(true);
   Serial.begin(9600);
+
+  myservo.attach(9); // attaches the servo on pin 9 to the servo object
+  myservo.write(90);
 }
 
-void loop(){
+void loop() {
   Wire.beginTransmission(MPU_addr);
   Wire.write(0x3B);        // starting with register 0x3B (ACCEL_XOUT_H)
   Wire.endTransmission(false);
-  Wire.requestFrom(MPU_addr,6,true);  // request 6 bytes (3 registers) from MPU6050
-  int16_t raw_AcX=Wire.read()<<8|Wire.read();     // concatenate high and low bytes
-  int16_t raw_AcY=Wire.read()<<8|Wire.read();     
-  int16_t raw_AcZ=Wire.read()<<8|Wire.read();     
+  Wire.requestFrom(MPU_addr, 6, true);  // request 6 bytes (3 registers) from MPU6050
+  int16_t raw_AcX = Wire.read() << 8 | Wire.read();     // concatenate high and low bytes
+  int16_t raw_AcY = Wire.read() << 8 | Wire.read();
+  int16_t raw_AcZ = Wire.read() << 8 | Wire.read();
+
+  delay(100); //delay to prevent startup complications
 
   // Convert raw accelerometer values to real-time acceleration values in m/s^2
   Ax = (float) raw_AcX / accel_scale * g;
   Ay = (float) raw_AcY / accel_scale * g;
   Az = (float) raw_AcZ / accel_scale * g;
 
+  // Filter accelerometer values using a moving average filter
+  filtered_Ax = (filtered_Ax * 8 + Ax) / 9;
+  filtered_Ay = (filtered_Ay * 8 + Ay) / 9;
+  filtered_Az = (filtered_Az * 8 + Az) / 9;
+
+// Print both raw and filtered accelerometer values to serial plotter
+  Serial.print("Raw: ");
   Serial.print(Ax); Serial.print(",");
   Serial.print(Ay); Serial.print(",");
-  Serial.println(-Az);
-  delay(5); // wait for 10ms
-}
+  Serial.println(Az); Serial.print("\t");
 
+  //Serial.print("Filtered: ");
+  Serial.print(filtered_Ax); Serial.print(",");
+  Serial.print(filtered_Ay); Serial.print(",");
+  Serial.println(filtered_Az);
+
+  if (filtered_Az>= 0) {
+    if ((Ax+Ay+Az)-(filtered_Ax+filtered_Ay+filtered_Az) >= 1) {
+        myservo.write(0);
+    }
+  }
+
+  delay(0.8); // wait for 0.8ms, as this is the fastest mpu9250 can operate
+}
