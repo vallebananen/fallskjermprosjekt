@@ -3,3 +3,6 @@ Arduino prosjekt som leser verdier av en BME680 trykkmåler og MPU9250 akselerom
 
 Video fra test av akselerometer:
 https://youtu.be/IpWUvKBsQFo
+
+Video fra test av akselerometer på drone:
+https://youtu.be/OPSI_GWWlzQ
